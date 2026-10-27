@@ -1,6 +1,8 @@
 # ── Build stage ───────────────────────────────────────────────
 FROM node:22-alpine AS build
 
+RUN apk add --no-cache openssl
+
 WORKDIR /app
 
 # Copy dependency manifests first (better layer caching)
@@ -15,6 +17,8 @@ COPY . .
 
 # ── Production stage ─────────────────────────────────────────
 FROM node:22-alpine AS production
+
+RUN apk add --no-cache openssl
 
 WORKDIR /app
 
