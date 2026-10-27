@@ -1,6 +1,6 @@
 import { Router } from 'express';
 import { prisma } from '../db.js';
-import { HttpError } from '../utils.js';
+import { HttpError, newSecret } from '../utils.js';
 import { DEFAULT_TOWNS, importFromPlaces } from '../discovery.js';
 import { approveClaim } from '../onboarding.js';
 import { isPhotoName, photoUri, placesConfigured, apiStats, clearCache } from '../places.js';
@@ -78,6 +78,38 @@ router.post('/admin/places/import', async (req, res, next) => {
       maxPagesPerQuery: Math.min(3, Math.max(1, Number(maxPagesPerQuery) || 1)),
     });
     res.json(summary);
+  } catch (err) {
+    next(err);
+  }
+});
+
+// Club portal: every club with its API key (the club's portal password).
+const adminClub = (c) => ({
+  id: c.id,
+  slug: c.slug,
+  name: c.name,
+  location: c.location,
+  status: c.status,
+  image: (Array.isArray(c.images) && c.images[0]) || null,
+  apiKey: c.apiKey,
+});
+
+router.get('/admin/clubs', async (req, res, next) => {
+  try {
+    const clubs = await prisma.club.findMany({ orderBy: [{ name: 'asc' }] });
+    res.json(clubs.map(adminClub));
+  } catch (err) {
+    next(err);
+  }
+});
+
+// Issues a new API key for a club, replacing any existing one.
+router.post('/admin/clubs/:id/api-key', async (req, res, next) => {
+  try {
+    const club = await prisma.club.findUnique({ where: { id: req.params.id } });
+    if (!club) throw new HttpError(404, 'Surf club not found');
+    const updated = await prisma.club.update({ where: { id: club.id }, data: { apiKey: newSecret('sk_live') } });
+    res.json(adminClub(updated));
   } catch (err) {
     next(err);
   }
