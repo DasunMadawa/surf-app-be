@@ -10,7 +10,11 @@ import { newId, slugify } from './utils.js';
 export const DEFAULT_TOWNS = Object.keys(KNOWN_LOCATIONS).map((t) => t.replace(/\b\w/g, (c) => c.toUpperCase()));
 const QUERIES = ['surf school in {town}, Sri Lanka', 'surf camp in {town}, Sri Lanka'];
 
-const photoUrl = (name) => `/api/media/place-photo?name=${encodeURIComponent(name)}`;
+const photoUrl = (name) => {
+  // Build absolute URL so photos resolve to the backend, not the frontend domain.
+  const base = process.env.APP_URL ? process.env.APP_URL.replace(/\/$/, '') : '';
+  return `${base}/api/media/place-photo?name=${encodeURIComponent(name)}`;
+};
 
 function inferServices(place) {
   const text = `${place.displayName?.text || ''} ${(place.types || []).join(' ')}`.toLowerCase();
