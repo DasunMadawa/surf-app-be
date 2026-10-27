@@ -1,0 +1,136 @@
+datasource db {
+  provider = "postgresql"
+  url      = env("DATABASE_URL")
+}
+
+generator client {
+  provider = "prisma-client-js"
+}
+
+model Club {
+  id                String         @id
+  slug              String         @unique
+  name              String
+  location          String
+  address           String?
+  description       String?        @db.Text
+  images            Json           @default("[]")
+  services          Json           @default("[]")
+  badge             String?
+  rating            Float          @default(0)
+  reviewCount       Int            @default(0)
+  apiKey            String?        @unique
+  country           String         @default("Sri Lanka")
+  features          Json           @default("[]")
+  coordinates       Json?
+  timeSlots         Json           @default("[]")
+  slotCapacity      Int            @default(10)
+  phone             String?
+  contact           Json?
+  notificationEmail String?
+  webhookUrl        String?        @db.Text
+  webhookSecret     String?
+  status            String         @default("active")
+  verification      Json?
+  source            String         @default("seed")
+  sortOrder         Int            @default(0)
+  googlePlaceId     String?        @unique
+  googleMapsUri     String?        @db.Text
+  website           String?        @db.Text
+  photoAttributions Json           @default("[]")
+  placesSyncedAt    DateTime?
+  claimedAt         DateTime?
+  createdAt         DateTime       @default(now())
+  updatedAt         DateTime       @updatedAt
+
+  packages          Package[]
+  reviews           Review[]
+  bookings          Booking[]
+  notifications     Notification[]
+
+  @@index([location])
+  @@index([status])
+}
+
+model Package {
+  id              String    @id
+  clubId          String
+  club            Club      @relation(fields: [clubId], references: [id], onDelete: Cascade)
+  title           String
+  subtitle        String?
+  price           Int
+  originalPrice   Int?
+  maxParticipants Int       @default(8)
+  sessions        Int       @default(1)
+  popular         Boolean   @default(false)
+  active          Boolean   @default(true)
+  image           String?   @db.Text
+  highlights      Json      @default("[]")
+  sortOrder       Int       @default(0)
+  createdAt       DateTime  @default(now())
+  updatedAt       DateTime  @updatedAt
+
+  bookings        Booking[]
+
+  @@index([clubId])
+}
+
+model Review {
+  id         String   @id
+  clubId     String
+  club       Club     @relation(fields: [clubId], references: [id], onDelete: Cascade)
+  source     String   @default("google")
+  name       String
+  authorUri  String?  @db.Text
+  country    String?
+  rating     Float    @default(0)
+  comment    String   @db.Text
+  date       String
+  createdAt  DateTime @default(now())
+
+  @@index([clubId])
+}
+
+model Booking {
+  id            String   @id
+  ref           String   @unique
+  clubId        String
+  club          Club     @relation(fields: [clubId], references: [id], onDelete: Restrict)
+  clubName      String
+  packageId     String
+  package       Package  @relation(fields: [packageId], references: [id], onDelete: Restrict)
+  packageTitle  String
+  packageImage  String?  @db.Text
+  date          String
+  slot          String
+  participants  Int      @default(1)
+  unitPrice     Int
+  amount        Int
+  currency      String   @default("LKR")
+  customer      Json
+  paymentMethod String
+  paymentStatus String
+  status        String   @default("pending")
+  history       Json     @default("[]")
+  createdAt     DateTime @default(now())
+  updatedAt     DateTime @updatedAt
+
+  @@index([clubId, date])
+  @@index([ref])
+}
+
+model Notification {
+  id         String   @id
+  clubId     String
+  club       Club     @relation(fields: [clubId], references: [id], onDelete: Cascade)
+  eventId    String?
+  type       String
+  bookingRef String?
+  channel    String
+  status     String
+  attempts   Int      @default(1)
+  detail     String?  @db.Text
+  createdAt  DateTime @default(now())
+
+  @@index([clubId])
+}
