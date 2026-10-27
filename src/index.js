@@ -12,7 +12,14 @@ import adminRoutes from './routes/admin.js';
 await load();
 
 const app = express();
-app.use(cors());
+
+// CORS: allow specific origins from env, or all origins if not set.
+const corsOrigin = process.env.CORS_ORIGIN;
+app.use(cors({
+  origin: corsOrigin
+    ? corsOrigin.split(',').map(o => o.trim())
+    : '*',
+}));
 app.use(express.json({ limit: '1mb' }));
 
 app.get('/api/health', (req, res) => res.json({ ok: true, time: new Date().toISOString() }));
